@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+logs/
+venv/
+EXAM MATERIALS (2017 syllabus )
