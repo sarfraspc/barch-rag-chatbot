@@ -7,3 +7,6 @@ transformers
 torch
 sentence-transformers
 langsmith
+fastapi
+uvicorn
+pydantic
