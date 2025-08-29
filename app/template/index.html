@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archie - Your Architecture Study Assistant</title>
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f7;
+            --bg-chat: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --accent: #0071e3;
+            --user-bubble: #007aff;
+            --assistant-bubble: #f0f0f3;
+            --border: #d2d2d7;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --error: #ff3b30;
+            --success: #34c759;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1c1c1e;
+            --bg-secondary: #2c2c2e;
+            --bg-chat: #000000;
+            --text-primary: #f5f5f7;
+            --text-secondary: #98989d;
+            --accent: #0a84ff;
+            --user-bubble: #0a84ff;
+            --assistant-bubble: #38383a;
+            --border: #48484a;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --error: #ff453a;
+            --success: #30d158;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            font-weight: 500;
+        }
+
+        button:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-chat);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: var(--bg-chat);
+            scroll-behavior: smooth;
+        }
+
+        .chat-messages {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Message Bubbles */
+        .message {
+            display: flex;
+            gap: 0.75rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-content {
+            background: var(--user-bubble);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .message.assistant .message-content {
+            background: var(--assistant-bubble);
+            color: var(--text-primary);
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .message-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        /* Sources */
+        .sources {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sources-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .source-item {
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .source-item a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .source-item a:hover {
+            text-decoration: underline;
+        }
+
+        .source-snippet {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: flex;
+            gap: 0.3rem;
+            padding: 1rem;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Error State */
+        .error-message {
+            background: var(--error);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .error-message button {
+            background: white;
+            color: var(--error);
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        /* Input Area */
+        .input-container {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 1rem;
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            background: var(--bg-chat);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .input-field:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Welcome Message */
+        .welcome {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome h2 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .welcome p {
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .header-controls {
+                gap: 0.5rem;
+            }
+
+            button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .chat-container {
+                padding: 1rem;
+            }
+        }
+
+        /* Accessibility - Screen Reader Only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>
+            <span>🏛️</span>
+            <span>Archie</span>
+        </h1>
+        <div class="header-controls">
+            <button id="newChatBtn" aria-label="Start new chat">New Chat</button>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <span id="themeIcon"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Chat Container -->
+    <main class="chat-container" role="main">
+        <div class="chat-messages" id="chatMessages" aria-live="polite" aria-label="Chat messages">
+            <!-- Welcome message -->
+            <div class="welcome" id="welcomeMessage">
+                <h2>Welcome to Archie</h2>
+                <p>Your AI assistant for B.Arch 5th semester studies. Ask me about design theory, building construction, structures, history, or studio projects!</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Area -->
+    <div class="input-container">
+        <div class="input-wrapper">
+            <label for="messageInput" class="sr-only">Type your message</label>
+            <textarea 
+                id="messageInput" 
+                class="input-field" 
+                placeholder="Ask about architecture, design, structures..."
+                aria-label="Message input"
+                rows="1"
+            ></textarea>
+            <button id="sendBtn" aria-label="Send message">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // ============= CONFIGURATION =============
+        const CONFIG = {
+            baseUrl: 'http://localhost:8000',  // Change this to your API URL
+            endpoints: {
+                chat: '/ask',
+                stream: '/api/stream'  // Optional streaming endpoint
+            },
+            enableStreaming: false,  // Set to true if your backend supports streaming
+            requestTimeout: 30000  // 30 seconds timeout
+        };
+
+        // ============= STATE MANAGEMENT =============
+        let isLoading = false;
+        let conversationHistory = [];
+        let sessionId = localStorage.getItem('sessionId') || generateUUID();
+
+        // Store session ID
+        localStorage.setItem('sessionId', sessionId);
+
+        // ============= UTILITY FUNCTIONS =============
+        
+        // Generate UUID for session
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // ============= DOM ELEMENTS =============
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+
+        // ============= THEME MANAGEMENT =============
+        
+        // Load saved theme or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        function updateThemeIcon(theme) {
+            themeIcon.textContent = theme === 'dark' ? '' : '';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        // ============= MESSAGE RENDERING =============
+        
+        // Render a message bubble
+        function renderMessage(role, content, sources = null) {
+            // Hide welcome message on first message
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Add label for screen readers
+            const label = document.createElement('div');
+            label.className = 'message-label sr-only';
+            label.textContent = role === 'user' ? 'You' : 'Archie';
+            
+            contentDiv.appendChild(label);
+            
+            const textDiv = document.createElement('div');
+            textDiv.textContent = content;
+            contentDiv.appendChild(textDiv);
+            
+            // Add sources if available (for assistant messages)
+            if (sources && sources.length > 0) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.className = 'sources';
+                
+                const sourcesTitle = document.createElement('div');
+                sourcesTitle.className = 'sources-title';
+                sourcesTitle.textContent = 'Sources:';
+                sourcesDiv.appendChild(sourcesTitle);
+                
+                sources.forEach(source => {
+                    const sourceItem = document.createElement('div');
+                    sourceItem.className = 'source-item';
+                    
+                    if (source.url) {
+                        const link = document.createElement('a');
+                        link.href = source.url;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.textContent = source.title || source.url;
+                        sourceItem.appendChild(link);
+                    } else {
+                        sourceItem.textContent = source.title || 'Untitled Source';
+                    }
+                    
+                    if (source.snippet) {
+                        const snippet = document.createElement('div');
+                        snippet.className = 'source-snippet';
+                        snippet.textContent = source.snippet;
+                        sourceItem.appendChild(snippet);
+                    }
+                    
+                    sourcesDiv.appendChild(sourceItem);
+                });
+                
+                contentDiv.appendChild(sourcesDiv);
+            }
+            
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show loading indicator
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.id = 'loadingIndicator';
+            loadingDiv.innerHTML = `
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            hideLoading();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `
+                <span>${message}</span>
+                <button onclick="retryLastMessage()">Retry</button>
+            `;
+            chatMessages.appendChild(errorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // ============= API COMMUNICATION =============
+        
+        // Send message to API
+       async function sendMessage(message) {
+    const userInput = (message || "").trim();
+    if (!userInput || isLoading) return;
+
+    isLoading = true;
+    setInputState(false);
+
+    // show user message
+    renderMessage('user', userInput);
+    conversationHistory.push({ role: 'user', content: userInput });
+
+    // clear input UI
+    messageInput.value = '';
+    adjustTextareaHeight();
+
+    // show loading indicator
+    showLoading();
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
+
+      const response = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: userInput }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      hideLoading();
+      renderMessage('assistant', data.answer || "No answer", data.sources || []);
+      conversationHistory.push({ role: 'assistant', content: data.answer || "" });
+
+    } catch (error) {
+      console.error("Error sending message:", error);
+      let errorMessage = "Failed to send message. ";
+      if (error.name === "AbortError") {
+        errorMessage += "Request timed out.";
+      } else {
+        errorMessage += error.message || "Unknown error";
+      }
+      showError(errorMessage);
+      conversationHistory.pop(); // drop the failed user message from history
+    } finally {
+      isLoading = false;
+      setInputState(true);
+      messageInput.focus();
+    }
+  }
+
+  // hook up the send button and Enter key to use sendMessage properly:
+  sendBtn.addEventListener('click', () => sendMessage(messageInput.value));
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(messageInput.value);
+    }
+  });
+        // Retry last message
+        function retryLastMessage() {
+            // Remove error message
+            const errorMessages = document.querySelectorAll('.error-message');
+            errorMessages.forEach(err => err.remove());
+            
+            // Get last user message
+            const lastUserMessage = conversationHistory.filter(m => m.role === 'user').pop();
+            if (lastUserMessage) {
+                // Remove from history to re-add
+                conversationHistory = conversationHistory.slice(0, -1);
+                
+                // Remove last user message from UI
+                const userMessages = document.querySelectorAll('.message.user');
+                if (userMessages.length > 0) {
+                    userMessages[userMessages.length - 1].remove();
+                }
+                
+                // Resend
+                sendMessage(lastUserMessage.content);
+            }
+        }
+
+        // ============= UI CONTROLS =============
+        
+        // Set input state (enabled/disabled)
+        function setInputState(enabled) {
+            messageInput.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+        }
+
+        // Auto-resize textarea
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
+        }
+
+        // ============= EVENT LISTENERS =============
+        
+        // Send button click
+        sendBtn.addEventListener('click', () => {
+            sendMessage(messageInput.value);
+        });
+
+        // Enter key handling
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(messageInput.value);
+            }
+        });
+
+        // Auto-resize textarea on input
+        messageInput.addEventListener('input', adjustTextareaHeight);
+
+        // New chat button
+        newChatBtn.addEventListener('click', () => {
+            if (confirm('Start a new chat? Current conversation will be cleared.')) {
+                // Clear UI
+                chatMessages.innerHTML = '';
+                
+                // Show welcome message again
+                const newWelcome = document.createElement('div');
+                newWelcome.className = 'welcome';
+                newWelcome.id = 'welcomeMessage';
+                newWelcome.innerHTML = `
+                    <h2>Welcome to Archie</h2>
+                    <p>Your AI assistant for B.Arch 5th semester studies. Ask me about design theory, building construction, structures, history, or studio projects!</p>
+                `;
+                chatMessages.appendChild(newWelcome);
+                
+                // Reset state
+                conversationHistory = [];
+                sessionId = generateUUID();
+                localStorage.setItem('sessionId', sessionId);
+                
+                // Focus input
+                messageInput.focus();
+            }
+        });
+
+        // Initial focus
+        messageInput.focus();
+    </script>
+</body>
+</html>
