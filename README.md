@@ -81,4 +81,11 @@ uvicorn app.app:app --reload
 - Multi-semester Support: Cover all B.Arch semesters.
 - Visual Content: Add support for architectural diagrams and drawings.
 - Collaboration Features: Enable student discussion and shared notes.
+---
+
+## Learn More
+
+I’ve detailed the full story of building **Archie – The B.Arch RAG Chatbot** in this article:  
+[Building Archie: A RAG-Based Chatbot for Architectural Education](https://medium.com/@sarfrasspc/building-archie-a-rag-based-chatbot-for-architectural-education-bec9d650e7f9)
+
 
