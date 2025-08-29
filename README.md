@@ -64,22 +64,20 @@ b-arch-chatbot/
 ├── chroma_db/             # Persistent vector database
 └── requirements.txt       # Project dependencies
 
+```
 ## Running the System
 Build / Train the Model
-bash
-Copy code
+```text
 python -m scripts.train
+```
 Start the Chatbot
-bash
-Copy code
+```text
 uvicorn app.app:app --reload
-
+```
 
 ## Future Enhancements
 
 - Multi-semester Support: Cover all B.Arch semesters.
-
 - Visual Content: Add support for architectural diagrams and drawings.
-
 - Collaboration Features: Enable student discussion and shared notes.
 
