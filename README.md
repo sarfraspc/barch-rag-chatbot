@@ -1,10 +1,11 @@
 # Archie - B.Arch RAG Chatbot
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0-green?logo=fastapi&logoColor=white)
-![LangChain](https://img.shields.io/badge/LangChain-v0.1.0-orange?logo=langchain)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.116.1-green?logo=fastapi&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-v0.3.27-orange?logo=langchain)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-persistent-yellowgreen)
 ![LLM](https://img.shields.io/badge/Groq_Llama3-70B-purple)
+
 
 **Intelligent study assistant for 5th-semester B.Arch students — powered by RAG, LLMs, and semantic search.**
 
