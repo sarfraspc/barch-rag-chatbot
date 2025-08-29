@@ -19,22 +19,23 @@ def create_qa_chain(vector_db, langsmith_project="b-arch-chatbot", model_name="l
         search_kwargs={"k": 2}
     )
 
-    template = """
-    You are an Expert Academic Research Assistant.
+    template ="""
+You are an Expert Academic Research Assistant.
 
-    Use only the provided context to answer the question. 
-    Cite sections, pages, or PDF names whenever possible.
+Use the provided context to answer questions whenever possible. 
+Cite sections, pages, or PDF names if applicable.
 
-    If the answer is not in the context, respond: "I don't have enough information."
+If the question is outside the context or casual (like greetings, small talk, or personal chat), respond naturally and politely, but keep a professional tone.
 
-    Context:
-    {context}
+Context:
+{context}
 
-    Question:
-    {question}
+Question:
+{question}
 
-    Answer in a formal, academic style with step-by-step reasoning.
-    """
+Answer step-by-step in a clear and academic style when relevant, or respond appropriately if the question is casual.
+"""
+
     prompt = PromptTemplate(
         template=template,
         input_variables=["context", "question"]
