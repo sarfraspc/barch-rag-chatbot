@@ -42,24 +42,32 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            height: 100vh;
             display: flex;
             flex-direction: column;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Header */
+        /* Header - Fixed at top */
         .header {
-            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-primary);
             border-bottom: 1px solid var(--border);
-            padding: 1rem;
+            padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 3px var(--shadow);
             flex-shrink: 0;
         }
 
@@ -83,14 +91,20 @@
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
+            font-size: 0.95rem;
             font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
         }
 
         button:hover:not(:disabled) {
             opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         button:disabled {
@@ -98,28 +112,23 @@
             cursor: not-allowed;
         }
 
-        button:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
-        }
-
         .theme-toggle {
-            background: var(--bg-chat);
+            background: var(--bg-secondary);
             color: var(--text-primary);
-            border: 1px solid var(--border);
             padding: 0.5rem;
             width: 40px;
             height: 40px;
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2rem;
         }
 
-        /* Chat Container */
+        /* Chat Container - Scrollable area */
         .chat-container {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 1.5rem;
             background: var(--bg-chat);
             scroll-behavior: smooth;
@@ -131,6 +140,7 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            min-height: 100%;
         }
 
         /* Message Bubbles */
@@ -252,8 +262,10 @@
             font-size: 0.85rem;
         }
 
-        /* Input Area */
+        /* Input Area - Fixed at bottom */
         .input-container {
+            position: sticky;
+            bottom: 0;
             background: var(--bg-secondary);
             border-top: 1px solid var(--border);
             padding: 1rem;
@@ -314,6 +326,10 @@
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
             .header h1 {
                 font-size: 1.2rem;
             }
@@ -327,12 +343,22 @@
                 font-size: 0.85rem;
             }
 
+            .theme-toggle {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+
             .message-content {
                 max-width: 85%;
             }
 
             .chat-container {
                 padding: 1rem;
+            }
+
+            .input-container {
+                padding: 0.75rem;
             }
         }
 
@@ -360,13 +386,13 @@
         <div class="header-controls">
             <button id="newChatBtn" aria-label="Start new chat">New Chat</button>
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <span id="themeIcon"></span>
+                <span id="themeIcon">🌙</span>
             </button>
         </div>
     </header>
 
     <!-- Chat Container -->
-    <main class="chat-container" role="main">
+    <main class="chat-container" id="chatContainer" role="main">
         <div class="chat-messages" id="chatMessages" aria-live="polite" aria-label="Chat messages">
             <!-- Welcome message -->
             <div class="welcome" id="welcomeMessage">
@@ -392,17 +418,6 @@
     </div>
 
     <script>
-        // ============= CONFIGURATION =============
-        const CONFIG = {
-            baseUrl: 'http://localhost:8000',  // Change this to your API URL
-            endpoints: {
-                chat: '/ask',
-                stream: '/api/stream'  // Optional streaming endpoint
-            },
-            enableStreaming: false,  // Set to true if your backend supports streaming
-            requestTimeout: 30000  // 30 seconds timeout
-        };
-
         // ============= STATE MANAGEMENT =============
         let isLoading = false;
         let conversationHistory = [];
@@ -422,7 +437,19 @@
             });
         }
 
+        // Scroll to bottom of chat - FIXED
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chatContainer');
+            if (chatContainer) {
+                // Use requestAnimationFrame for smoother scrolling
+                requestAnimationFrame(() => {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                });
+            }
+        }
+
         // ============= DOM ELEMENTS =============
+        const chatContainer = document.getElementById('chatContainer');
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -439,7 +466,7 @@
         updateThemeIcon(savedTheme);
 
         function updateThemeIcon(theme) {
-            themeIcon.textContent = theme === 'dark' ? '' : '';
+            themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
         }
 
         themeToggle.addEventListener('click', () => {
@@ -455,7 +482,7 @@
         // Render a message bubble
         function renderMessage(role, content, sources = null) {
             // Hide welcome message on first message
-            if (welcomeMessage) {
+            if (welcomeMessage && welcomeMessage.style.display !== 'none') {
                 welcomeMessage.style.display = 'none';
             }
 
@@ -473,7 +500,10 @@
             contentDiv.appendChild(label);
             
             const textDiv = document.createElement('div');
-            textDiv.textContent = content;
+            textDiv.innerHTML = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\n/g, '<br>');
             contentDiv.appendChild(textDiv);
             
             // Add sources if available (for assistant messages)
@@ -517,8 +547,8 @@
             messageDiv.appendChild(contentDiv);
             chatMessages.appendChild(messageDiv);
             
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Scroll to bottom with a slight delay to ensure rendering
+            setTimeout(scrollToBottom, 100);
         }
 
         // Show loading indicator
@@ -532,7 +562,7 @@
                 <div class="loading-dot"></div>
             `;
             chatMessages.appendChild(loadingDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            setTimeout(scrollToBottom, 100);
         }
 
         // Hide loading indicator
@@ -554,78 +584,70 @@
                 <button onclick="retryLastMessage()">Retry</button>
             `;
             chatMessages.appendChild(errorDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            setTimeout(scrollToBottom, 100);
         }
 
         // ============= API COMMUNICATION =============
         
         // Send message to API
-       async function sendMessage(message) {
-    const userInput = (message || "").trim();
-    if (!userInput || isLoading) return;
+        async function sendMessage(message) {
+            const userInput = (message || "").trim();
+            if (!userInput || isLoading) return;
 
-    isLoading = true;
-    setInputState(false);
+            isLoading = true;
+            setInputState(false);
 
-    // show user message
-    renderMessage('user', userInput);
-    conversationHistory.push({ role: 'user', content: userInput });
+            // Show user message
+            renderMessage('user', userInput);
+            conversationHistory.push({ role: 'user', content: userInput });
 
-    // clear input UI
-    messageInput.value = '';
-    adjustTextareaHeight();
+            // Clear input UI
+            messageInput.value = '';
+            adjustTextareaHeight();
 
-    // show loading indicator
-    showLoading();
+            // Show loading indicator
+            showLoading();
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch("/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userInput }),
-        signal: controller.signal
-      });
+                const response = await fetch("/ask", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: userInput }),
+                    signal: controller.signal
+                });
 
-      clearTimeout(timeoutId);
+                clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-      }
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
 
-      const data = await response.json();
+                const data = await response.json();
 
-      hideLoading();
-      renderMessage('assistant', data.answer || "No answer", data.sources || []);
-      conversationHistory.push({ role: 'assistant', content: data.answer || "" });
+                hideLoading();
+                renderMessage('assistant', data.answer || "No answer received", data.sources || []);
+                conversationHistory.push({ role: 'assistant', content: data.answer || "" });
 
-    } catch (error) {
-      console.error("Error sending message:", error);
-      let errorMessage = "Failed to send message. ";
-      if (error.name === "AbortError") {
-        errorMessage += "Request timed out.";
-      } else {
-        errorMessage += error.message || "Unknown error";
-      }
-      showError(errorMessage);
-      conversationHistory.pop(); // drop the failed user message from history
-    } finally {
-      isLoading = false;
-      setInputState(true);
-      messageInput.focus();
-    }
-  }
+            } catch (error) {
+                console.error("Error sending message:", error);
+                let errorMessage = "Failed to send message. ";
+                if (error.name === "AbortError") {
+                    errorMessage += "Request timed out.";
+                } else {
+                    errorMessage += error.message || "Unknown error";
+                }
+                showError(errorMessage);
+                conversationHistory.pop();
+            } finally {
+                isLoading = false;
+                setInputState(true);
+                messageInput.focus();
+            }
+        }
 
-  // hook up the send button and Enter key to use sendMessage properly:
-  sendBtn.addEventListener('click', () => sendMessage(messageInput.value));
-  messageInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(messageInput.value);
-    }
-  });
         // Retry last message
         function retryLastMessage() {
             // Remove error message
@@ -683,7 +705,7 @@
 
         // New chat button
         newChatBtn.addEventListener('click', () => {
-            if (confirm('Start a new chat? Current conversation will be cleared.')) {
+            if (conversationHistory.length === 0 || confirm('Start a new chat? Current conversation will be cleared.')) {
                 // Clear UI
                 chatMessages.innerHTML = '';
                 
@@ -701,6 +723,9 @@
                 conversationHistory = [];
                 sessionId = generateUUID();
                 localStorage.setItem('sessionId', sessionId);
+                
+                // Scroll to top
+                chatContainer.scrollTop = 0;
                 
                 // Focus input
                 messageInput.focus();

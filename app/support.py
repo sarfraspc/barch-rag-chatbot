@@ -1,5 +1,5 @@
 from src.embeddings import get_embeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from src.qa import create_qa_chain
 
 DB_DIR = "chroma_db/"
